@@ -13,7 +13,7 @@ pip install catbox_uploader
 ### Upload a file:
 
 ```python
-from catbox_uploader import CatboxUploader
+from catbox import CatboxUploader
 
 uploader = CatboxUploader()
 link = uploader.upload_file('path/to/your/image.png')
@@ -23,7 +23,7 @@ print(f'Uploaded file link: {link}')
 ### Upload a URL:
 
 ```python
-from catbox_uploader import CatboxUploader
+from catbox import CatboxUploader
 
 uploader = CatboxUploader()
 link = uploader.upload_url('https://example.com/image.png')
@@ -33,7 +33,7 @@ print(f'Uploaded URL link: {link}')
 ### Error Handling:
 
 ```python
-from catbox_uploader import CatboxUploader, CatboxError, FileNotFoundError
+from catbox import CatboxUploader, CatboxError, FileNotFoundError
 
 uploader = CatboxUploader()
 try:
