@@ -4,6 +4,7 @@ from .exceptions import CatboxError, FileNotFoundError, TimeoutError, Connection
 class CatboxUploader:
     def __init__(self):
         self.api_url = 'https://catbox.moe/user/api.php'
+        self.litterbox_url = 'https://litterbox.catbox.moe/resources/internals/api.php'
 
     def upload_file(self, file_path, timeout=30):
         """
@@ -29,26 +30,26 @@ class CatboxUploader:
         except requests.exceptions.RequestException as e:
             raise CatboxError(f"An error occurred: {str(e)}")
 
-    def upload_url(self, url, timeout=30):
+    def upload_to_litterbox(self, file_path, time='1h', timeout=30):
         """
-        Upload a URL to Catbox and return the link.
+        Upload file to Litterbox (temporary storage) and return the link.
         
-        :param url: URL of the file to upload.
+        :param file_path: Path to the file to upload.
+        :param time: Duration for which the file will be available. Options: '1h', '12h', '24h', '72h'.
         :param timeout: Timeout in seconds for the upload request.
-        :return: URL of the uploaded file on Catbox.
+        :return: URL of the uploaded file on Litterbox.
         """
         try:
-            data = {
-                'reqtype': 'urlupload',
-                'url': url
-            }
-            response = requests.post(self.api_url, data=data, timeout=timeout)
-            response.raise_for_status()
-            return response.text.strip()
+            with open(file_path, 'rb') as file:
+                files = {'fileToUpload': file}
+                data = {'reqtype': 'fileupload', 'time': time}
+                response = requests.post(self.litterbox_url, files=files, data=data, timeout=timeout)
+                response.raise_for_status()
+                return response.text.strip()
         except requests.exceptions.Timeout:
-            raise TimeoutError(f"Upload request timed out after {timeout} seconds.")
+            raise TimeoutError(f"Upload to Litterbox timed out after {timeout} seconds.")
         except requests.exceptions.ConnectionError:
-            raise ConnectionError("Failed to connect to Catbox. The server might be down.")
+            raise ConnectionError("Failed to connect to Litterbox. The server might be down.")
         except requests.exceptions.HTTPError as http_err:
             raise HTTPError(f"HTTP error occurred: {http_err}")
         except requests.exceptions.RequestException as e:
