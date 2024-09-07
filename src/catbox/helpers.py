@@ -2,22 +2,20 @@ import requests
 from io import BytesIO
 from .exceptions import CatboxError, TimeoutError, ConnectionError, HTTPError
 
-def upload_file(file_path_or_bytes, file_name="file.png", timeout=30, userhash=None):
+def upload_file(file_path_or_bytes, timeout=30, userhash=None):
     """
     Upload file to Catbox. Supports both file paths and BytesIO objects.
     
     :param file_path_or_bytes: Path to the file to upload or a BytesIO object.
-    :param file_name: Name of the file with extension (e.g., file.png).
     :param timeout: Timeout in seconds for the upload request.
     :param userhash: Optional userhash for authenticated upload.
     :return: URL of the uploaded file on Catbox.
     """
     try:
         if isinstance(file_path_or_bytes, BytesIO):
-            files = {'fileToUpload': (file_name, file_path_or_bytes, 'application/octet-stream')}
+            files = {'fileToUpload': ('file.png', file_path_or_bytes, 'application/octet-stream')}
         else:
-            with open(file_path_or_bytes, 'rb') as file:
-                files = {'fileToUpload': (file_name, file)}
+            files = {'fileToUpload': (file_path_or_bytes, open(file_path_or_bytes, 'rb'))}
 
         data = {'reqtype': 'fileupload'}
         
