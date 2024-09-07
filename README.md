@@ -42,6 +42,20 @@ link = uploader.upload_to_litterbox('path/to/your/image.png', time='24h')
 print(f'Uploaded file link (available for 24 hours): {link}')
 ```
 
+### Upload Multiple Files as an Album to Catbox
+
+You can upload multiple files as an album to **Catbox.moe** using the `upload_album` method. This allows you to upload several files at once, and it will return the links for all uploaded files.
+
+```python
+from catbox import CatboxUploader
+
+uploader = CatboxUploader()
+file_paths = ['file1.jpg', 'file2.jpg', 'file3.jpg']
+links = uploader.upload_album(file_paths)
+for link in links:
+    print(f'Uploaded file link: {link}')
+```
+
 ### Upload a URL to Catbox
 
 If you want to upload a file via a URL to **Catbox**, you can use the `upload_url` method.
