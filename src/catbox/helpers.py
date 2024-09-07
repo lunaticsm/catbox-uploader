@@ -2,22 +2,23 @@ import requests
 from io import BytesIO
 from .exceptions import CatboxError, TimeoutError, ConnectionError, HTTPError
 
-def upload_file(file_path_or_bytes, timeout=30, userhash=None):
+def upload_file(file_path_or_bytes, file_name="file.png", timeout=30, userhash=None):
     """
     Upload file to Catbox. Supports both file paths and BytesIO objects.
     
     :param file_path_or_bytes: Path to the file to upload or a BytesIO object.
+    :param file_name: Name of the file with extension (e.g., file.png).
     :param timeout: Timeout in seconds for the upload request.
     :param userhash: Optional userhash for authenticated upload.
     :return: URL of the uploaded file on Catbox.
     """
     try:
         if isinstance(file_path_or_bytes, BytesIO):
-            files = {'fileToUpload': ('file', file_path_or_bytes)}
+            files = {'fileToUpload': (file_name, file_path_or_bytes, 'application/octet-stream')}
         else:
             with open(file_path_or_bytes, 'rb') as file:
-                files = {'fileToUpload': file}
-        
+                files = {'fileToUpload': (file_name, file)}
+
         data = {'reqtype': 'fileupload'}
         
         if userhash:
@@ -25,8 +26,9 @@ def upload_file(file_path_or_bytes, timeout=30, userhash=None):
 
         response = requests.post("https://catbox.moe/user/api.php", files=files, data=data, timeout=timeout)
         response.raise_for_status()
+        
         return response.text.strip()
-    
+
     except requests.exceptions.Timeout:
         raise TimeoutError(f"Upload request timed out after {timeout} seconds.")
     except requests.exceptions.ConnectionError:
@@ -36,21 +38,22 @@ def upload_file(file_path_or_bytes, timeout=30, userhash=None):
     except requests.exceptions.RequestException as e:
         raise CatboxError(f"An error occurred: {str(e)}")
 
-def upload_to_litterbox(file_path_or_bytes, time='1h', timeout=30):
+def upload_to_litterbox(file_path_or_bytes, file_name="file.png", time='1h', timeout=30):
     """
     Upload file to Litterbox (temporary storage). Supports both file paths and BytesIO objects.
     
     :param file_path_or_bytes: Path to the file to upload or a BytesIO object.
+    :param file_name: Name of the file with extension (e.g., file.png).
     :param time: Duration for which the file will be available. Options: '1h', '12h', '24h', '72h', '1w'.
     :param timeout: Timeout in seconds for the upload request.
     :return: URL of the uploaded file on Litterbox.
     """
     try:
         if isinstance(file_path_or_bytes, BytesIO):
-            files = {'fileToUpload': ('file', file_path_or_bytes)}
+            files = {'fileToUpload': (file_name, file_path_or_bytes, 'application/octet-stream')}
         else:
             with open(file_path_or_bytes, 'rb') as file:
-                files = {'fileToUpload': file}
+                files = {'fileToUpload': (file_name, file)}
         
         data = {'reqtype': 'fileupload', 'time': time}
         response = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", files=files, data=data, timeout=timeout)
@@ -79,10 +82,10 @@ def upload_album(file_paths_or_bytes_list, timeout=30, userhash=None):
     try:
         for file_path_or_bytes in file_paths_or_bytes_list:
             if isinstance(file_path_or_bytes, BytesIO):
-                files = {'fileToUpload': ('file', file_path_or_bytes)}
+                files = {'fileToUpload': ('file.png', file_path_or_bytes, 'application/octet-stream')}
             else:
                 with open(file_path_or_bytes, 'rb') as file:
-                    files = {'fileToUpload': file}
+                    files = {'fileToUpload': (file.name, file)}
             
             data = {'reqtype': 'fileupload'}
             
