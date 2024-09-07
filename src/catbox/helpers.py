@@ -1,26 +1,32 @@
 import requests
+from io import BytesIO
 from .exceptions import CatboxError, TimeoutError, ConnectionError, HTTPError
 
-def upload_file(file_path, timeout=30, userhash=None):
+def upload_file(file_path_or_bytes, timeout=30, userhash=None):
     """
-    Upload file to Catbox. If userhash is provided, the upload will be authenticated.
+    Upload file to Catbox. Supports both file paths and BytesIO objects.
     
-    :param file_path: Path to the file to upload.
+    :param file_path_or_bytes: Path to the file to upload or a BytesIO object.
     :param timeout: Timeout in seconds for the upload request.
     :param userhash: Optional userhash for authenticated upload.
     :return: URL of the uploaded file on Catbox.
     """
     try:
-        with open(file_path, 'rb') as file:
-            files = {'fileToUpload': file}
-            data = {'reqtype': 'fileupload'}
-            
-            if userhash:
-                data['userhash'] = userhash  
-                
-            response = requests.post("https://catbox.moe/user/api.php", files=files, data=data, timeout=timeout)
-            response.raise_for_status()
-            return response.text.strip()
+        if isinstance(file_path_or_bytes, BytesIO):
+            files = {'fileToUpload': ('file', file_path_or_bytes)}
+        else:
+            with open(file_path_or_bytes, 'rb') as file:
+                files = {'fileToUpload': file}
+        
+        data = {'reqtype': 'fileupload'}
+        
+        if userhash:
+            data['userhash'] = userhash
+
+        response = requests.post("https://catbox.moe/user/api.php", files=files, data=data, timeout=timeout)
+        response.raise_for_status()
+        return response.text.strip()
+    
     except requests.exceptions.Timeout:
         raise TimeoutError(f"Upload request timed out after {timeout} seconds.")
     except requests.exceptions.ConnectionError:
@@ -30,22 +36,27 @@ def upload_file(file_path, timeout=30, userhash=None):
     except requests.exceptions.RequestException as e:
         raise CatboxError(f"An error occurred: {str(e)}")
 
-def upload_to_litterbox(file_path, time='1h', timeout=30):
+def upload_to_litterbox(file_path_or_bytes, time='1h', timeout=30):
     """
-    Upload file to Litterbox (temporary storage).
+    Upload file to Litterbox (temporary storage). Supports both file paths and BytesIO objects.
     
-    :param file_path: Path to the file to upload.
-    :param time: Duration for which the file will be available. Options: '1h', '12h', '24h', '72h'.
+    :param file_path_or_bytes: Path to the file to upload or a BytesIO object.
+    :param time: Duration for which the file will be available. Options: '1h', '12h', '24h', '72h', '1w'.
     :param timeout: Timeout in seconds for the upload request.
     :return: URL of the uploaded file on Litterbox.
     """
     try:
-        with open(file_path, 'rb') as file:
-            files = {'fileToUpload': file}
-            data = {'reqtype': 'fileupload', 'time': time}
-            response = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", files=files, data=data, timeout=timeout)
-            response.raise_for_status()
-            return response.text.strip()
+        if isinstance(file_path_or_bytes, BytesIO):
+            files = {'fileToUpload': ('file', file_path_or_bytes)}
+        else:
+            with open(file_path_or_bytes, 'rb') as file:
+                files = {'fileToUpload': file}
+        
+        data = {'reqtype': 'fileupload', 'time': time}
+        response = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", files=files, data=data, timeout=timeout)
+        response.raise_for_status()
+        return response.text.strip()
+    
     except requests.exceptions.Timeout:
         raise TimeoutError(f"Upload to Litterbox timed out after {timeout} seconds.")
     except requests.exceptions.ConnectionError:
@@ -55,29 +66,35 @@ def upload_to_litterbox(file_path, time='1h', timeout=30):
     except requests.exceptions.RequestException as e:
         raise CatboxError(f"An error occurred: {str(e)}")
 
-def upload_album(file_paths, timeout=30, userhash=None):
+def upload_album(file_paths_or_bytes_list, timeout=30, userhash=None):
     """
-    Upload multiple files as an album to Catbox and return their links.
+    Upload multiple files as an album to Catbox and return their links. Supports both file paths and BytesIO objects.
     
-    :param file_paths: List of paths to the files to upload.
+    :param file_paths_or_bytes_list: List of file paths or BytesIO objects.
     :param timeout: Timeout in seconds for the upload request.
     :param userhash: Optional userhash for authenticated upload.
     :return: List of URLs of the uploaded files on Catbox.
     """
     uploaded_links = []
     try:
-        for file_path in file_paths:
-            with open(file_path, 'rb') as file:
-                files = {'fileToUpload': file}
-                data = {'reqtype': 'fileupload'}
-                
-                if userhash:
-                    data['userhash'] = userhash
+        for file_path_or_bytes in file_paths_or_bytes_list:
+            if isinstance(file_path_or_bytes, BytesIO):
+                files = {'fileToUpload': ('file', file_path_or_bytes)}
+            else:
+                with open(file_path_or_bytes, 'rb') as file:
+                    files = {'fileToUpload': file}
+            
+            data = {'reqtype': 'fileupload'}
+            
+            if userhash:
+                data['userhash'] = userhash
 
-                response = requests.post("https://catbox.moe/user/api.php", files=files, data=data, timeout=timeout)
-                response.raise_for_status()
-                uploaded_links.append(response.text.strip())
+            response = requests.post("https://catbox.moe/user/api.php", files=files, data=data, timeout=timeout)
+            response.raise_for_status()
+            uploaded_links.append(response.text.strip())
+        
         return uploaded_links
+    
     except requests.exceptions.Timeout:
         raise TimeoutError(f"Album upload timed out after {timeout} seconds.")
     except requests.exceptions.ConnectionError:
