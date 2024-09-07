@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='catbox_uploader',
-    version='1.7',
+    version='2.0',
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=['requests'],

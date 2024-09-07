@@ -1,6 +1,6 @@
 # Catbox Uploader
 
-Catbox Uploader is a simple Python library to upload files and URLs to [Catbox.moe](https://catbox.moe), including its temporary storage feature, **Litterbox**.
+Catbox Uploader is a simple Python library to upload files and URLs to [Catbox.moe](https://catbox.moe), including its temporary storage feature, **Litterbox**, and album management.
 
 ## Installation
 
@@ -10,16 +10,23 @@ pip install catbox-uploader
 
 ## Usage
 
-### Upload a File to Catbox
+### Using Userhash
 
-You can upload files to **Catbox.moe** using the `upload_file` method. The file will be stored permanently.
+CatboxUploader supports using a **userhash** directly. You can pass the `userhash` when initializing the `CatboxUploader` and use it for authenticated uploads and album management.
+
+### Initialize with Userhash
 
 ```python
 from catbox import CatboxUploader
 
-uploader = CatboxUploader()
-link = uploader.upload_file('path/to/your/image.png')
-print(f'Uploaded file link: {link}')
+uploader = CatboxUploader(userhash='your_userhash_here')
+```
+
+### Upload a File
+
+```python
+link = uploader.upload_file('path/to/your/file.jpg')
+print(f'Uploaded file: {link}')
 ```
 
 ### Upload a File to Litterbox (Temporary Storage)
@@ -32,43 +39,50 @@ Litterbox allows you to upload files for a temporary period, after which the fil
 - `24h`: 24 hours
 - `72h`: 3 days
 
-Example of uploading a file to Litterbox for 24 hours:
-
 ```python
-from catbox import CatboxUploader
-
-uploader = CatboxUploader()
-link = uploader.upload_to_litterbox('path/to/your/image.png', time='24h')
-print(f'Uploaded file link (available for 24 hours): {link}')
+link = uploader.upload_to_litterbox('path/to/your/file.jpg', time='24h')
+print(f'Uploaded file (available for 24 hours): {link}')
 ```
 
-### Upload Multiple Files as an Album to Catbox
+### Upload Multiple Files as an Album
 
 You can upload multiple files as an album to **Catbox.moe** using the `upload_album` method. This allows you to upload several files at once, and it will return the links for all uploaded files.
 
 ```python
-from catbox import CatboxUploader
-
-uploader = CatboxUploader()
 file_paths = ['file1.jpg', 'file2.jpg', 'file3.jpg']
 links = uploader.upload_album(file_paths)
 for link in links:
     print(f'Uploaded file link: {link}')
 ```
 
-### Upload a URL to Catbox
+### Create and Manage Albums
 
-If you want to upload a file via a URL to **Catbox**, you can use the `upload_url` method.
+#### Create an Album
+
+You can create an album with uploaded files, a title, and a description using the `create_album` method:
 
 ```python
-from catbox import CatboxUploader
-
-uploader = CatboxUploader()
-link = uploader.upload_url('https://example.com/image.png')
-print(f'Uploaded URL link: {link}')
+album_shortcode = uploader.create_album(file_links, "My Album", "This is a test album")
+print(f"Album created: https://catbox.moe/c/{album_shortcode}")
 ```
 
-## Error Handling
+#### Edit an Album
+
+You can edit an album by changing its title, description, or the files it contains:
+
+```python
+uploader.edit_album(album_shortcode, file_links, "Updated Album Title", "Updated description")
+```
+
+#### Delete an Album
+
+You can delete an album by its shortcode:
+
+```python
+uploader.delete_album(album_shortcode)
+```
+
+### Error Handling
 
 The library comes with built-in exception handling to manage common errors such as timeouts, connection issues, or HTTP errors.
 
@@ -79,10 +93,10 @@ If the upload takes too long and exceeds the specified timeout, a `TimeoutError`
 ```python
 from catbox import CatboxUploader, TimeoutError
 
-uploader = CatboxUploader()
+uploader = CatboxUploader(userhash='your_userhash_here')
 try:
-    link = uploader.upload_file('path/to/your/image.png', timeout=10)
-    print(f'Uploaded file link: {link}')
+    link = uploader.upload_file('path/to/your/file.jpg', timeout=10)
+    print(f'Uploaded file: {link}')
 except TimeoutError:
     print("The upload took too long and timed out.")
 ```
@@ -94,10 +108,10 @@ If there's a problem connecting to the **Catbox.moe** or **Litterbox** server, a
 ```python
 from catbox import CatboxUploader, ConnectionError
 
-uploader = CatboxUploader()
+uploader = CatboxUploader(userhash='your_userhash_here')
 try:
-    link = uploader.upload_file('path/to/your/image.png')
-    print(f'Uploaded file link: {link}')
+    link = uploader.upload_file('path/to/your/file.jpg')
+    print(f'Uploaded file: {link}')
 except ConnectionError:
     print("Failed to connect to the server.")
 ```
@@ -109,27 +123,12 @@ In case of HTTP errors (such as 404 or 500), an `HTTPError` will be raised.
 ```python
 from catbox import CatboxUploader, HTTPError
 
-uploader = CatboxUploader()
+uploader = CatboxUploader(userhash='your_userhash_here')
 try:
-    link = uploader.upload_file('path/to/your/image.png')
-    print(f'Uploaded file link: {link}')
+    link = uploader.upload_file('path/to/your/file.jpg')
+    print(f'Uploaded file: {link}')
 except HTTPError as he:
     print(f"HTTP error occurred: {he}")
-```
-
-### Other Errors
-
-For other unexpected errors, a general `CatboxError` will be raised.
-
-```python
-from catbox import CatboxUploader, CatboxError
-
-uploader = CatboxUploader()
-try:
-    link = uploader.upload_file('path/to/your/image.png')
-    print(f'Uploaded file link: {link}')
-except CatboxError as e:
-    print(f"An error occurred: {e}")
 ```
 
 ## License

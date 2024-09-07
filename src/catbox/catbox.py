@@ -1,83 +1,40 @@
-import requests
-from .exceptions import CatboxError, FileNotFoundError, TimeoutError, ConnectionError, HTTPError
+from .helpers import upload_file, upload_to_litterbox, upload_album, delete_files, create_album, edit_album, delete_album
+from .exceptions import CatboxError
 
 class CatboxUploader:
-    def __init__(self):
-        self.api_url = 'https://catbox.moe/user/api.php'
-        self.litterbox_url = 'https://litterbox.catbox.moe/resources/internals/api.php'
-
-    def upload_file(self, file_path, timeout=30):
+    def __init__(self, userhash=None):
         """
-        Upload file to Catbox and return the link.
+        Initialize CatboxUploader with optional userhash (similar to API key).
         
-        :param file_path: Path to the file to upload.
-        :param timeout: Timeout in seconds for the upload request.
-        :return: URL of the uploaded file on Catbox.
+        :param userhash: A string containing the userhash for authenticated uploads and album management.
         """
-        try:
-            with open(file_path, 'rb') as file:
-                files = {'fileToUpload': file}
-                data = {'reqtype': 'fileupload'}
-                response = requests.post(self.api_url, files=files, data=data, timeout=timeout)
-                response.raise_for_status()
-                return response.text.strip()
-        except requests.exceptions.Timeout:
-            raise TimeoutError(f"Upload request timed out after {timeout} seconds.")
-        except requests.exceptions.ConnectionError:
-            raise ConnectionError("Failed to connect to Catbox. The server might be down.")
-        except requests.exceptions.HTTPError as http_err:
-            raise HTTPError(f"HTTP error occurred: {http_err}")
-        except requests.exceptions.RequestException as e:
-            raise CatboxError(f"An error occurred: {str(e)}")
+        self.userhash = userhash
+    
+    def upload_file(self, file_path, timeout=30):
+        return upload_file(file_path, timeout, self.userhash)
 
     def upload_to_litterbox(self, file_path, time='1h', timeout=30):
-        """
-        Upload file to Litterbox (temporary storage) and return the link.
-        
-        :param file_path: Path to the file to upload.
-        :param time: Duration for which the file will be available. Options: '1h', '12h', '24h', '72h', '1w'.
-        :param timeout: Timeout in seconds for the upload request.
-        :return: URL of the uploaded file on Litterbox.
-        """
-        try:
-            with open(file_path, 'rb') as file:
-                files = {'fileToUpload': file}
-                data = {'reqtype': 'fileupload', 'time': time}
-                response = requests.post(self.litterbox_url, files=files, data=data, timeout=timeout)
-                response.raise_for_status()
-                return response.text.strip()
-        except requests.exceptions.Timeout:
-            raise TimeoutError(f"Upload to Litterbox timed out after {timeout} seconds.")
-        except requests.exceptions.ConnectionError:
-            raise ConnectionError("Failed to connect to Litterbox. The server might be down.")
-        except requests.exceptions.HTTPError as http_err:
-            raise HTTPError(f"HTTP error occurred: {http_err}")
-        except requests.exceptions.RequestException as e:
-            raise CatboxError(f"An error occurred: {str(e)}")
+        return upload_to_litterbox(file_path, time, timeout)
 
     def upload_album(self, file_paths, timeout=30):
-        """
-        Upload multiple files as an album to Catbox and return their links.
-        
-        :param file_paths: List of paths to the files to upload.
-        :param timeout: Timeout in seconds for the upload request.
-        :return: List of URLs of the uploaded files on Catbox.
-        """
-        uploaded_links = []
-        try:
-            for file_path in file_paths:
-                with open(file_path, 'rb') as file:
-                    files = {'fileToUpload': file}
-                    data = {'reqtype': 'fileupload'}
-                    response = requests.post(self.api_url, files=files, data=data, timeout=timeout)
-                    response.raise_for_status()
-                    uploaded_links.append(response.text.strip())
-            return uploaded_links
-        except requests.exceptions.Timeout:
-            raise TimeoutError(f"Album upload timed out after {timeout} seconds.")
-        except requests.exceptions.ConnectionError:
-            raise ConnectionError("Failed to connect to Catbox. The server might be down.")
-        except requests.exceptions.HTTPError as http_err:
-            raise HTTPError(f"HTTP error occurred: {http_err}")
-        except requests.exceptions.RequestException as e:
-            raise CatboxError(f"An error occurred: {str(e)}")
+        return upload_album(file_paths, timeout, self.userhash)
+
+    def delete_files(self, files):
+        if not self.userhash:
+            raise CatboxError("Userhash is required to delete files.")
+        return delete_files(files, self.userhash)
+
+    def create_album(self, files, title, description):
+        if not self.userhash:
+            raise CatboxError("Userhash is required to create an album.")
+        return create_album(files, title, description, self.userhash)
+
+    def edit_album(self, shortcode, files, title, description):
+        if not self.userhash:
+            raise CatboxError("Userhash is required to edit an album.")
+        return edit_album(shortcode, files, title, description, self.userhash)
+
+    def delete_album(self, shortcode):
+        if not self.userhash:
+            raise CatboxError("Userhash is required to delete an album.")
+        return delete_album(shortcode, self.userhash)
