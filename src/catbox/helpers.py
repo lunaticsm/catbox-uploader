@@ -1,5 +1,5 @@
 import requests
-from io import BytesIO
+import os
 from .exceptions import CatboxError, TimeoutError, ConnectionError, HTTPError
 
 def upload_file(file_path_or_bytes, timeout=30, userhash=None):
@@ -12,29 +12,31 @@ def upload_file(file_path_or_bytes, timeout=30, userhash=None):
     :return: URL of the uploaded file on Catbox.
     """
     try:
-        if isinstance(file_path_or_bytes, BytesIO):
-            files = {'fileToUpload': ('file.png', file_path_or_bytes, 'application/octet-stream')}
+        if isinstance(file_path_or_bytes, str):
+            files = {'fileToUpload': open(file_path_or_bytes, 'rb')}
         else:
-            files = {'fileToUpload': (file_path_or_bytes, open(file_path_or_bytes, 'rb'))}
+            raise CatboxError("Only file paths are supported in this version.")
 
         data = {'reqtype': 'fileupload'}
-        
         if userhash:
             data['userhash'] = userhash
 
         response = requests.post("https://catbox.moe/user/api.php", files=files, data=data, timeout=timeout)
-        response.raise_for_status()
+
+        if response.status_code != 200 or not response.text:
+            raise CatboxError("Failed to upload file to Catbox.")
         
         return response.text.strip()
 
     except requests.exceptions.Timeout:
         raise TimeoutError(f"Upload request timed out after {timeout} seconds.")
     except requests.exceptions.ConnectionError:
-        raise ConnectionError("Failed to connect to Catbox. The server might be down.")
-    except requests.exceptions.HTTPError as http_err:
-        raise HTTPError(f"HTTP error occurred: {http_err}")
+        raise ConnectionError("Failed to connect to Catbox.")
     except requests.exceptions.RequestException as e:
         raise CatboxError(f"An error occurred: {str(e)}")
+    finally:
+        if isinstance(file_path_or_bytes, str):
+            files['fileToUpload'].close()
 
 def upload_to_litterbox(file_path_or_bytes, file_name="file.png", time='1h', timeout=30):
     """
