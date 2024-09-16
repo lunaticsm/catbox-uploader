@@ -1,0 +1,64 @@
+name: Notify Telegram
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    types: [opened, closed, reopened, synchronized]
+  issues:
+    types: [opened, closed, reopened]
+  fork:
+  watch:
+  release:
+  create:
+  delete:
+  discussion:
+  workflow_run:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Telegram Notification for All Events
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          EVENT_NAME=${{ github.event_name }}
+          REPO_NAME=${{ github.repository }}
+          ACTOR=${{ github.actor }}
+          REF=${{ github.ref_name }}
+          ACTION=${{ github.event.action }}
+
+          if [ "${EVENT_NAME}" == "push" ]; then
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+            COMMIT_HASH=$(git log -1 --pretty=%h)
+            COMMIT_URL=${{ github.event.head_commit.url }}
+            MESSAGE="🔨 1 Commit baru ke *${REPO_NAME}[${REF}]*\n\n• \`${COMMIT_HASH}\` - ${COMMIT_MESSAGE} oleh *${ACTOR}*\n\n[Open Change](${COMMIT_URL})"
+          elif [ "${EVENT_NAME}" == "pull_request" ]; then
+            PR_TITLE=${{ github.event.pull_request.title }}
+            PR_URL=${{ github.event.pull_request.html_url }}
+            MESSAGE="🔄 Pull Request *${ACTION}* ke *${REPO_NAME}*\n\n• *${PR_TITLE}* oleh *${ACTOR}*\n\n[Open PR](${PR_URL})"
+          elif [ "${EVENT_NAME}" == "issues" ]; then
+            ISSUE_TITLE=${{ github.event.issue.title }}
+            ISSUE_URL=${{ github.event.issue.html_url }}
+            MESSAGE="🔔 Issue *${ACTION}* di *${REPO_NAME}*\n\n• *${ISSUE_TITLE}* oleh *${ACTOR}*\n\n[Open Issue](${ISSUE_URL})"
+          elif [ "${EVENT_NAME}" == "fork" ]; then
+            FORK_URL=${{ github.event.forkee.html_url }}
+            MESSAGE="🍴 Repository *${REPO_NAME}* difork oleh *${ACTOR}*\n\n[Open Fork](${FORK_URL})"
+          elif [ "${EVENT_NAME}" == "watch" ]; then
+            MESSAGE="⭐ *${ACTOR}* memberi bintang pada *${REPO_NAME}*"
+          elif [ "${EVENT_NAME}" == "release" ]; then
+            RELEASE_TITLE=${{ github.event.release.name }}
+            RELEASE_URL=${{ github.event.release.html_url }}
+            MESSAGE="🚀 Rilis baru *${RELEASE_TITLE}* di *${REPO_NAME}* oleh *${ACTOR}*\n\n[Open Release](${RELEASE_URL})"
+          else
+            MESSAGE="📢 Event *${EVENT_NAME}* terjadi di *${REPO_NAME}* oleh *${ACTOR}*"
+          fi
+
+          curl -s -X POST https://api.telegram.org/bot${{ env.BOT_TOKEN }}/sendMessage \
+          -d chat_id=${{ env.CHAT_ID }} \
+          -d parse_mode="Markdown" \
+          -d text="${MESSAGE}"
