@@ -1,5 +1,6 @@
 import requests
 import os
+from io import BytesIO
 from .exceptions import CatboxError, TimeoutError, ConnectionError, HTTPError
 
 def upload_file(file_path_or_bytes, timeout=30, userhash=None):
