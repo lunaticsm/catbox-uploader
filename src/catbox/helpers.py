@@ -1,4 +1,5 @@
 import requests
+from io import BytesIO
 import os
 from .exceptions import CatboxError, TimeoutError, ConnectionError, HTTPError
 

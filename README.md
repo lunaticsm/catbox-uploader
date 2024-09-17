@@ -22,6 +22,14 @@ from catbox import CatboxUploader
 uploader = CatboxUploader(userhash='your_userhash_here')
 ```
 
+### Initialize without Userhash
+
+```python
+from catbox import CatboxUploader
+
+uploader = CatboxUploader()
+```
+
 ### Upload a File
 
 ```python
